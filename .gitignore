@@ -1,0 +1,17 @@
+
+# Ambiente virtual Python
+.venv/
+venv/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+
+# Configurações locais do editor
+.vscode/
+
+# Arquivos temporários
+*.log
+
+# Dados gerados pelo projeto
+vendas.csv
