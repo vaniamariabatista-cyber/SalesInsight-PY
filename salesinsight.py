@@ -51,11 +51,24 @@ def gerar_dataset_vendas(n_registros=200, seed=42):
     return pd.DataFrame(dados)
 
 
+def inspecionar_dados(df):
+    """Exibe as informacoes estruturais do DataFrame."""
+    print("\n=== INSPECAO INICIAL DO DATASET ===")
+    print(f"Shape: {df.shape}")
+    print(f"\nColunas: {list(df.columns)}")
+    print(f"\nTipos de dados:\n{df.dtypes}")
+    print(f"\nValores nulos por coluna:\n{df.isnull().sum()}")
+    print(f"\nPrimeiros registros:\n{df.head()}")
+    return df
+
+
 def main():
     df = gerar_dataset_vendas()
     df.to_csv("vendas.csv", index=False)
     print(f"Dataset gerado com {len(df)} registros.")
-    print(df.head())
+
+    df_bruto = pd.read_csv("vendas.csv")
+    inspecionar_dados(df_bruto)
 
 
 if __name__ == "__main__":
