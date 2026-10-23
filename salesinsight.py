@@ -97,6 +97,35 @@ def tratar_dados(df):
 
     return df, relatorio
 
+def criar_colunas_derivadas(df):
+    """Cria receita, mes, trimestre, ano e faixa de valor da venda."""
+    df = df.copy()
+
+    # receita da linha: quantidade x preco (a coluna toda de uma vez)
+    df["receita_total"] = df["quantidade"] * df["preco_unitario"]
+
+    # partes da data
+    meses = {1: "Janeiro", 2: "Fevereiro", 3: "Marco", 4: "Abril",
+             5: "Maio", 6: "Junho", 7: "Julho", 8: "Agosto",
+             9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"}
+    df["mes"] = df["data_venda"].dt.month
+    df["mes_nome"] = df["mes"].map(meses)
+    df["trimestre"] = "Q" + df["data_venda"].dt.quarter.astype(str)
+    df["ano"] = df["data_venda"].dt.year
+
+    # faixa de valor, por condicoes
+    condicoes = [
+        df["receita_total"] < 500,
+        (df["receita_total"] >= 500) & (df["receita_total"] < 5000),
+        df["receita_total"] >= 5000,
+    ]
+    faixas = ["Baixo Valor", "Medio Valor", "Alto Valor"]
+
+    df["faixa_receita_item"] = "Nao Classificado"
+    for condicao, faixa in zip(condicoes, faixas):
+        df.loc[condicao, "faixa_receita_item"] = faixa
+
+    return df
 
 def main():
     df = gerar_dataset_vendas()
@@ -109,6 +138,8 @@ def main():
     df_limpo, relatorio = tratar_dados(df_bruto)
     print(df_limpo.dtypes)
 
+    df_final = criar_colunas_derivadas(df_limpo)
+    print(df_final.head())
 
 if __name__ == "__main__":
     main()
