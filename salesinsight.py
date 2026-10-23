@@ -127,6 +127,82 @@ def criar_colunas_derivadas(df):
 
     return df
 
+
+def calcular_metricas(df):
+    """
+    Calcula as metricas agregadas do dataset.
+    Retorna um dicionario no formato {nome_da_metrica: DataFrame}.
+    """
+    metricas = {}
+
+    # receita, quantidade e numero de vendas por mes
+    metricas["por_mes"] = (
+        df.groupby("mes")
+        .agg(receita_total=("receita_total", "sum"),
+             quantidade=("quantidade", "sum"),
+             n_vendas=("id_venda", "count"))
+        .reset_index()
+    )
+
+    # top 5 produtos por receita
+    metricas["top_produtos"] = (
+        df.groupby("produto")["receita_total"].sum()
+        .sort_values(ascending=False)
+        .head(5)
+        .reset_index()
+    )
+
+    # receita por categoria
+    metricas["por_categoria"] = (
+        df.groupby("categoria")["receita_total"].sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    # receita e ticket medio por regiao
+    metricas["por_regiao"] = (
+        df.groupby("regiao")
+        .agg(receita_total=("receita_total", "sum"),
+             ticket_medio=("receita_total", "mean"))
+        .sort_values("receita_total", ascending=False)
+        .reset_index()
+    )
+
+    # exibicao legivel no console
+    for nome, tabela in metricas.items():
+        print(f"\n=== {nome.upper().replace('_', ' ')} ===")
+        print(tabela.round(2).to_string(index=False))
+
+    return metricas
+
+def segmentar_clientes(df):
+    """
+    Agrupa por cliente, soma a receita e classifica em
+    Bronze / Prata / Ouro.
+    Retorna um DataFrame com: cliente, total_gasto, segmento.
+    """
+    clientes = (
+        df.groupby("cliente")["receita_total"].sum()
+        .reset_index()
+        .rename(columns={"receita_total": "total_gasto"})
+        .sort_values("total_gasto", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    # lambda: recebe o total de um cliente e devolve o segmento
+    clientes["segmento"] = clientes["total_gasto"].apply(
+        lambda total: "Bronze" if total < 5000
+        else ("Prata" if total <= 15000 else "Ouro")
+    )
+
+    print("\n=== TOP 10 CLIENTES ===")
+    print(clientes.head(10).round(2).to_string(index=False))
+
+    print("\n=== CLIENTES POR SEGMENTO ===")
+    print(clientes["segmento"].value_counts())
+
+    return clientes
+
 def main():
     df = gerar_dataset_vendas()
     df.to_csv("vendas.csv", index=False)
@@ -141,5 +217,8 @@ def main():
     df_final = criar_colunas_derivadas(df_limpo)
     print(df_final.head())
 
+    metricas = calcular_metricas(df_final)
+
+    clientes = segmentar_clientes(df_final)
 if __name__ == "__main__":
     main()
