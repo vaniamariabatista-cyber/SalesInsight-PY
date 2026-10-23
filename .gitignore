@@ -12,6 +12,3 @@ __pycache__/
 
 # Arquivos temporários
 *.log
-
-# Dados gerados pelo projeto
-vendas.csv
