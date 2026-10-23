@@ -4,6 +4,13 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
+import os
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+PASTA_GRAFICOS = "outputs/graficos"
+COR_PRINCIPAL = "#1f4e79"
 
 def gerar_dataset_vendas(n_registros=200, seed=42):
     """Gera um dataset sintetico de vendas com dados sujos."""
@@ -203,6 +210,35 @@ def segmentar_clientes(df):
 
     return clientes
 
+def _salvar(fig, nome):
+    """Ajusta o layout e salva a figura como PNG."""
+    os.makedirs(PASTA_GRAFICOS, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(f"{PASTA_GRAFICOS}/{nome}", dpi=150)
+    plt.close(fig)
+
+
+def _plot_linha(ax, por_mes):
+    """Desenha a receita total por mes em um eixo."""
+    ax.plot(por_mes["mes"], por_mes["receita_total"],
+            marker="o", linewidth=2, color=COR_PRINCIPAL)
+    ax.set_title("Receita Total por Mes")
+    ax.set_xlabel("Mes")
+    ax.set_ylabel("Receita Total (R$)")
+    ax.set_xticks(por_mes["mes"])
+    ax.grid(True, alpha=0.3)
+
+
+def gerar_graficos(df, metricas):
+    """Gera e exporta as figuras do projeto."""
+    sns.set_theme(style="whitegrid")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_linha(ax, metricas["por_mes"])
+    _salvar(fig, "receita_por_mes.png")
+
+    print(f"\nGraficos salvos em {PASTA_GRAFICOS}")
+
 def main():
     df = gerar_dataset_vendas()
     df.to_csv("vendas.csv", index=False)
@@ -220,5 +256,8 @@ def main():
     metricas = calcular_metricas(df_final)
 
     clientes = segmentar_clientes(df_final)
+
+    gerar_graficos(df_final, metricas)
+    
 if __name__ == "__main__":
     main()
