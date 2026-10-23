@@ -61,6 +61,42 @@ def inspecionar_dados(df):
     print(f"\nPrimeiros registros:\n{df.head()}")
     return df
 
+def tratar_dados(df):
+    """
+    Trata o DataFrame de vendas.
+    Retorna: (df_limpo, relatorio), onde relatorio e um dicionario
+    com as contagens de registros iniciais, convertidos e finais.
+    """
+    df = df.copy()
+    registros_iniciais = len(df)
+
+    # 1. remover espacos extras nas colunas de texto
+    for coluna in ["cliente", "produto", "categoria", "regiao"]:
+        df[coluna] = df[coluna].str.strip()
+
+    # 2. converter data_venda; o que nao for data vira NaT
+    df["data_venda"] = pd.to_datetime(df["data_venda"], errors="coerce")
+    datas_invalidas = int(df["data_venda"].isna().sum())
+    df = df.dropna(subset=["data_venda"]).reset_index(drop=True)
+
+    # 3. garantir os tipos numericos
+    df["quantidade"] = df["quantidade"].astype(int)
+    df["preco_unitario"] = df["preco_unitario"].astype(float)
+
+    # 4. relatorio de limpeza
+    relatorio = {
+        "registros_iniciais": registros_iniciais,
+        "datas_convertidas": registros_iniciais - datas_invalidas,
+        "datas_invalidas_removidas": datas_invalidas,
+        "registros_finais": len(df),
+    }
+
+    print("\n=== RELATORIO DE LIMPEZA ===")
+    for chave, valor in relatorio.items():
+        print(f"{chave}: {valor}")
+
+    return df, relatorio
+
 
 def main():
     df = gerar_dataset_vendas()
@@ -69,6 +105,9 @@ def main():
 
     df_bruto = pd.read_csv("vendas.csv")
     inspecionar_dados(df_bruto)
+
+    df_limpo, relatorio = tratar_dados(df_bruto)
+    print(df_limpo.dtypes)
 
 
 if __name__ == "__main__":
