@@ -4,6 +4,13 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
+import os
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+PASTA_GRAFICOS = "outputs/graficos"
+COR_PRINCIPAL = "#1f4e79"
 
 def gerar_dataset_vendas(n_registros=200, seed=42):
     """Gera um dataset sintetico de vendas com dados sujos."""
@@ -203,6 +210,77 @@ def segmentar_clientes(df):
 
     return clientes
 
+def _salvar(fig, nome):
+    """Ajusta o layout e salva a figura como PNG."""
+    os.makedirs(PASTA_GRAFICOS, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(f"{PASTA_GRAFICOS}/{nome}", dpi=150)
+    plt.close(fig)
+
+
+def _plot_linha(ax, por_mes):
+    """Desenha a receita total por mes em um eixo."""
+    ax.plot(por_mes["mes"], por_mes["receita_total"],
+            marker="o", linewidth=2, color=COR_PRINCIPAL)
+    ax.set_title("Receita Total por Mes")
+    ax.set_xlabel("Mes")
+    ax.set_ylabel("Receita Total (R$)")
+    ax.set_xticks(por_mes["mes"])
+    ax.grid(True, alpha=0.3)
+
+def _plot_barras(ax, top_produtos):
+    """Desenha o top 5 de produtos por receita em um eixo."""
+    ax.barh(top_produtos["produto"], top_produtos["receita_total"],
+            color=COR_PRINCIPAL)
+    ax.invert_yaxis()  # o produto de maior receita fica no topo
+    ax.set_title("Top 5 Produtos por Receita")
+    ax.set_xlabel("Receita Total (R$)")
+    ax.set_ylabel("Produto")
+    ax.grid(True, axis="x", alpha=0.3)
+
+def _plot_dispersao(ax, df):
+    """Desenha quantidade x receita por venda, colorido por categoria."""
+    cores = {"Computadores": "#1f4e79",
+             "Celulares": "#e07b39",
+             "Perifericos": "#5a9e6f"}
+
+    for categoria, grupo in df.groupby("categoria"):
+        ax.scatter(grupo["quantidade"], grupo["receita_total"],
+                   label=categoria, color=cores[categoria],
+                   alpha=0.7, s=40)
+
+    ax.set_title("Quantidade x Receita por Venda")
+    ax.set_xlabel("Quantidade")
+    ax.set_ylabel("Receita da Venda (R$)")
+    ax.legend(title="Categoria")
+    ax.grid(True, alpha=0.3)
+
+def gerar_graficos(df, metricas):
+    """Gera e exporta as figuras do projeto."""
+    sns.set_theme(style="whitegrid")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_linha(ax, metricas["por_mes"])
+    _salvar(fig, "receita_por_mes.png")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_barras(ax, metricas["top_produtos"])
+    _salvar(fig, "top_produtos.png")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_dispersao(ax, df)
+    _salvar(fig, "quantidade_vs_receita.png")
+
+def _plot_regiao(ax, por_regiao):
+    """Desenha a receita total por regiao em um eixo."""
+    ax.bar(por_regiao["regiao"], por_regiao["receita_total"],
+           color=COR_PRINCIPAL)
+    ax.set_title("Receita Total por Regiao")
+    ax.set_xlabel("Regiao")
+    ax.set_ylabel("Receita Total (R$)")
+    ax.grid(True, axis="y", alpha=0.3)
+
+
 def main():
     df = gerar_dataset_vendas()
     df.to_csv("vendas.csv", index=False)
@@ -220,5 +298,38 @@ def main():
     metricas = calcular_metricas(df_final)
 
     clientes = segmentar_clientes(df_final)
+
+    gerar_graficos(df_final, metricas)
+
+def gerar_graficos(df, metricas):
+    """Gera e exporta as figuras do projeto."""
+    sns.set_theme(style="whitegrid")
+
+    # 1. linha: receita por mes
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_linha(ax, metricas["por_mes"])
+    _salvar(fig, "receita_por_mes.png")
+
+    # 2. barras: top 5 produtos
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_barras(ax, metricas["top_produtos"])
+    _salvar(fig, "top_produtos.png")
+
+    # 3. dispersao: quantidade x receita
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_dispersao(ax, df)
+    _salvar(fig, "quantidade_vs_receita.png")
+
+    # 4. painel 2x2 com subplots
+    fig, axes = plt.subplots(2, 2, figsize=(14, 9))
+    _plot_linha(axes[0, 0], metricas["por_mes"])
+    _plot_barras(axes[0, 1], metricas["top_produtos"])
+    _plot_dispersao(axes[1, 0], df)
+    _plot_regiao(axes[1, 1], metricas["por_regiao"])
+    fig.suptitle("SalesInsight PY - Painel Resumo", fontsize=16)
+    _salvar(fig, "painel_resumo.png")
+
+    print(f"\nGraficos salvos em {PASTA_GRAFICOS}")
+
 if __name__ == "__main__":
     main()
