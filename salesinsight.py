@@ -134,6 +134,29 @@ def criar_colunas_derivadas(df):
 
     return df
 
+def processar_coluna(df, coluna, funcao_transformacao, nome_saida=None):
+    """
+    Aplica uma funcao de transformacao a uma coluna do DataFrame.
+    Demonstra o uso de funcoes como argumento.
+    """
+    df = df.copy()
+    nome_saida = nome_saida or f"{coluna}_transformado"
+    df[nome_saida] = df[coluna].apply(funcao_transformacao)
+    return df
+
+
+def enriquecer_dados(df):
+    """Cria colunas extras aplicando funcoes lambda via processar_coluna."""
+    # lambda 1: transformacao numerica (reais para milhares de reais)
+    df = processar_coluna(df, "receita_total",
+                          lambda x: round(x / 1000, 2),
+                          nome_saida="receita_em_milhares")
+
+    # lambda 2: classificacao condicional (perfil de volume da venda)
+    df = processar_coluna(df, "quantidade",
+                          lambda q: "Alto Volume" if q > 5 else "Baixo Volume",
+                          nome_saida="perfil_volume")
+    return df
 
 def calcular_metricas(df):
     """
@@ -293,6 +316,7 @@ def main():
     print(df_limpo.dtypes)
 
     df_final = criar_colunas_derivadas(df_limpo)
+    df_final = enriquecer_dados(df_final)
     print(df_final.head())
 
     metricas = calcular_metricas(df_final)
