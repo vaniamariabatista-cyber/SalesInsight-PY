@@ -238,6 +238,23 @@ def _plot_barras(ax, top_produtos):
     ax.set_ylabel("Produto")
     ax.grid(True, axis="x", alpha=0.3)
 
+def _plot_dispersao(ax, df):
+    """Desenha quantidade x receita por venda, colorido por categoria."""
+    cores = {"Computadores": "#1f4e79",
+             "Celulares": "#e07b39",
+             "Perifericos": "#5a9e6f"}
+
+    for categoria, grupo in df.groupby("categoria"):
+        ax.scatter(grupo["quantidade"], grupo["receita_total"],
+                   label=categoria, color=cores[categoria],
+                   alpha=0.7, s=40)
+
+    ax.set_title("Quantidade x Receita por Venda")
+    ax.set_xlabel("Quantidade")
+    ax.set_ylabel("Receita da Venda (R$)")
+    ax.legend(title="Categoria")
+    ax.grid(True, alpha=0.3)
+
 def gerar_graficos(df, metricas):
     """Gera e exporta as figuras do projeto."""
     sns.set_theme(style="whitegrid")
@@ -249,6 +266,10 @@ def gerar_graficos(df, metricas):
     fig, ax = plt.subplots(figsize=(10, 6))
     _plot_barras(ax, metricas["top_produtos"])
     _salvar(fig, "top_produtos.png")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_dispersao(ax, df)
+    _salvar(fig, "quantidade_vs_receita.png")
 
     print(f"\nGraficos salvos em {PASTA_GRAFICOS}")
 
