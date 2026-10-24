@@ -228,6 +228,15 @@ def _plot_linha(ax, por_mes):
     ax.set_xticks(por_mes["mes"])
     ax.grid(True, alpha=0.3)
 
+def _plot_barras(ax, top_produtos):
+    """Desenha o top 5 de produtos por receita em um eixo."""
+    ax.barh(top_produtos["produto"], top_produtos["receita_total"],
+            color=COR_PRINCIPAL)
+    ax.invert_yaxis()  # o produto de maior receita fica no topo
+    ax.set_title("Top 5 Produtos por Receita")
+    ax.set_xlabel("Receita Total (R$)")
+    ax.set_ylabel("Produto")
+    ax.grid(True, axis="x", alpha=0.3)
 
 def gerar_graficos(df, metricas):
     """Gera e exporta as figuras do projeto."""
@@ -236,6 +245,10 @@ def gerar_graficos(df, metricas):
     fig, ax = plt.subplots(figsize=(10, 6))
     _plot_linha(ax, metricas["por_mes"])
     _salvar(fig, "receita_por_mes.png")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_barras(ax, metricas["top_produtos"])
+    _salvar(fig, "top_produtos.png")
 
     print(f"\nGraficos salvos em {PASTA_GRAFICOS}")
 
@@ -258,6 +271,6 @@ def main():
     clientes = segmentar_clientes(df_final)
 
     gerar_graficos(df_final, metricas)
-    
+
 if __name__ == "__main__":
     main()
