@@ -271,7 +271,15 @@ def gerar_graficos(df, metricas):
     _plot_dispersao(ax, df)
     _salvar(fig, "quantidade_vs_receita.png")
 
-    print(f"\nGraficos salvos em {PASTA_GRAFICOS}")
+def _plot_regiao(ax, por_regiao):
+    """Desenha a receita total por regiao em um eixo."""
+    ax.bar(por_regiao["regiao"], por_regiao["receita_total"],
+           color=COR_PRINCIPAL)
+    ax.set_title("Receita Total por Regiao")
+    ax.set_xlabel("Regiao")
+    ax.set_ylabel("Receita Total (R$)")
+    ax.grid(True, axis="y", alpha=0.3)
+
 
 def main():
     df = gerar_dataset_vendas()
@@ -292,6 +300,36 @@ def main():
     clientes = segmentar_clientes(df_final)
 
     gerar_graficos(df_final, metricas)
+
+def gerar_graficos(df, metricas):
+    """Gera e exporta as figuras do projeto."""
+    sns.set_theme(style="whitegrid")
+
+    # 1. linha: receita por mes
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_linha(ax, metricas["por_mes"])
+    _salvar(fig, "receita_por_mes.png")
+
+    # 2. barras: top 5 produtos
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_barras(ax, metricas["top_produtos"])
+    _salvar(fig, "top_produtos.png")
+
+    # 3. dispersao: quantidade x receita
+    fig, ax = plt.subplots(figsize=(10, 6))
+    _plot_dispersao(ax, df)
+    _salvar(fig, "quantidade_vs_receita.png")
+
+    # 4. painel 2x2 com subplots
+    fig, axes = plt.subplots(2, 2, figsize=(14, 9))
+    _plot_linha(axes[0, 0], metricas["por_mes"])
+    _plot_barras(axes[0, 1], metricas["top_produtos"])
+    _plot_dispersao(axes[1, 0], df)
+    _plot_regiao(axes[1, 1], metricas["por_regiao"])
+    fig.suptitle("SalesInsight PY - Painel Resumo", fontsize=16)
+    _salvar(fig, "painel_resumo.png")
+
+    print(f"\nGraficos salvos em {PASTA_GRAFICOS}")
 
 if __name__ == "__main__":
     main()
