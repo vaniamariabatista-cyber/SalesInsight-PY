@@ -8,6 +8,7 @@ import os
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import json
 
 PASTA_GRAFICOS = "outputs/graficos"
 COR_PRINCIPAL = "#1f4e79"
@@ -233,6 +234,38 @@ def segmentar_clientes(df):
 
     return clientes
 
+def calcular_estatisticas(df):
+    """Calcula as estatísticas gerais do dataset limpo."""
+    return {
+        "receita_total": df["receita_total"].sum(),
+        "ticket_medio": df["receita_total"].mean(),
+        "quantidade_total": df["quantidade"].sum(),
+        "n_vendas": len(df),
+        "n_clientes": df["cliente"].nunique(),
+    }
+
+def exportar_resultados(metricas, clientes, estatisticas):
+    """Exporta os resultados do projeto em CSV e JSON."""
+    os.makedirs("outputs", exist_ok=True)
+
+    #CSV: metricas por mes e segmentação de clientes
+    metricas["por_mes"].round(2).to_csv(
+        "outputs/metricas_por_mes.csv", index=False, encoding="utf-8-sig")
+    clientes.round(2).to_csv(
+        "outputs/segmentacao_clientes.csv", index=False, encoding="utf-8-sig")
+
+    #JSON: estatísticas gerais (valores convertidos para números simples)
+    serializavel = {k: round(float(v), 2) for k, v in estatisticas.items()}
+    caminho = "outputs/estatisticas_gerais.json"
+    with open(caminho, "w", encoding="utf-8") as f:
+        json.dump(serializavel, f, indent=4, ensure_ascii=False)
+
+    # leitura de volta para confirmar a escrita
+    with open(caminho, "r", encoding="utf-8") as f:
+        conferencia = json.load(f)
+    print(f"\nJSON gravado e lido: {conferencia}")
+    
+
 def _salvar(fig, nome):
     """Ajusta o layout e salva a figura como PNG."""
     os.makedirs(PASTA_GRAFICOS, exist_ok=True)
@@ -322,6 +355,9 @@ def main():
     metricas = calcular_metricas(df_final)
 
     clientes = segmentar_clientes(df_final)
+
+    estatisticas = calcular_estatisticas(df_final)
+    exportar_resultados(metricas, clientes, estatisticas)
 
     gerar_graficos(df_final, metricas)
 
