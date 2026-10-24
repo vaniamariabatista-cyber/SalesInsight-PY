@@ -8,6 +8,7 @@ import os
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import json
 
 PASTA_GRAFICOS = "outputs/graficos"
 COR_PRINCIPAL = "#1f4e79"
@@ -134,6 +135,29 @@ def criar_colunas_derivadas(df):
 
     return df
 
+def processar_coluna(df, coluna, funcao_transformacao, nome_saida=None):
+    """
+    Aplica uma funcao de transformacao a uma coluna do DataFrame.
+    Demonstra o uso de funcoes como argumento.
+    """
+    df = df.copy()
+    nome_saida = nome_saida or f"{coluna}_transformado"
+    df[nome_saida] = df[coluna].apply(funcao_transformacao)
+    return df
+
+
+def enriquecer_dados(df):
+    """Cria colunas extras aplicando funcoes lambda via processar_coluna."""
+    # lambda 1: transformacao numerica (reais para milhares de reais)
+    df = processar_coluna(df, "receita_total",
+                          lambda x: round(x / 1000, 2),
+                          nome_saida="receita_em_milhares")
+
+    # lambda 2: classificacao condicional (perfil de volume da venda)
+    df = processar_coluna(df, "quantidade",
+                          lambda q: "Alto Volume" if q > 5 else "Baixo Volume",
+                          nome_saida="perfil_volume")
+    return df
 
 def calcular_metricas(df):
     """
@@ -210,6 +234,38 @@ def segmentar_clientes(df):
 
     return clientes
 
+def calcular_estatisticas(df):
+    """Calcula as estatísticas gerais do dataset limpo."""
+    return {
+        "receita_total": df["receita_total"].sum(),
+        "ticket_medio": df["receita_total"].mean(),
+        "quantidade_total": df["quantidade"].sum(),
+        "n_vendas": len(df),
+        "n_clientes": df["cliente"].nunique(),
+    }
+
+def exportar_resultados(metricas, clientes, estatisticas):
+    """Exporta os resultados do projeto em CSV e JSON."""
+    os.makedirs("outputs", exist_ok=True)
+
+    #CSV: metricas por mes e segmentação de clientes
+    metricas["por_mes"].round(2).to_csv(
+        "outputs/metricas_por_mes.csv", index=False, encoding="utf-8-sig")
+    clientes.round(2).to_csv(
+        "outputs/segmentacao_clientes.csv", index=False, encoding="utf-8-sig")
+
+    #JSON: estatísticas gerais (valores convertidos para números simples)
+    serializavel = {k: round(float(v), 2) for k, v in estatisticas.items()}
+    caminho = "outputs/estatisticas_gerais.json"
+    with open(caminho, "w", encoding="utf-8") as f:
+        json.dump(serializavel, f, indent=4, ensure_ascii=False)
+
+    # leitura de volta para confirmar a escrita
+    with open(caminho, "r", encoding="utf-8") as f:
+        conferencia = json.load(f)
+    print(f"\nJSON gravado e lido: {conferencia}")
+    
+
 def _salvar(fig, nome):
     """Ajusta o layout e salva a figura como PNG."""
     os.makedirs(PASTA_GRAFICOS, exist_ok=True)
@@ -280,27 +336,6 @@ def _plot_regiao(ax, por_regiao):
     ax.set_ylabel("Receita Total (R$)")
     ax.grid(True, axis="y", alpha=0.3)
 
-
-def main():
-    df = gerar_dataset_vendas()
-    df.to_csv("vendas.csv", index=False)
-    print(f"Dataset gerado com {len(df)} registros.")
-
-    df_bruto = pd.read_csv("vendas.csv")
-    inspecionar_dados(df_bruto)
-
-    df_limpo, relatorio = tratar_dados(df_bruto)
-    print(df_limpo.dtypes)
-
-    df_final = criar_colunas_derivadas(df_limpo)
-    print(df_final.head())
-
-    metricas = calcular_metricas(df_final)
-
-    clientes = segmentar_clientes(df_final)
-
-    gerar_graficos(df_final, metricas)
-
 def gerar_graficos(df, metricas):
     """Gera e exporta as figuras do projeto."""
     sns.set_theme(style="whitegrid")
@@ -330,6 +365,64 @@ def gerar_graficos(df, metricas):
     _salvar(fig, "painel_resumo.png")
 
     print(f"\nGraficos salvos em {PASTA_GRAFICOS}")
+
+class AnalisadorDeVendas:
+    """Organiza o fluxo de analise de vendas, do CSV ate os resultados."""
+
+    def __init__(self):
+        # campos que a "pasta" vai guardar, vazios no inicio
+        self.df_bruto = None
+        self.df = None
+        self.relatorio = None
+        self.metricas = None
+        self.clientes = None
+
+    def carregar(self, caminho):
+        """Le o CSV bruto e guarda na pasta."""
+        self.df_bruto = pd.read_csv(caminho)
+
+    def transformar(self):
+        """Limpa os dados e cria as colunas derivadas."""
+        self.df, self.relatorio = tratar_dados(self.df_bruto)
+        self.df = criar_colunas_derivadas(self.df)
+        self.df = enriquecer_dados(self.df)
+        print(self.df[["receita_total", "receita_em_milhares",
+                       "quantidade", "perfil_volume"]].head())
+
+    def analisar(self):
+        """Calcula as metricas e segmenta os clientes."""
+        self.metricas = calcular_metricas(self.df)
+        self.clientes = segmentar_clientes(self.df)
+
+    def visualizar(self):
+        """Gera e exporta os graficos."""
+        gerar_graficos(self.df, self.metricas)
+
+    def resumo(self):
+        """Calcula as estatisticas gerais e exporta CSV e JSON."""
+        estatisticas = calcular_estatisticas(self.df)
+        exportar_resultados(self.metricas, self.clientes, estatisticas)
+
+
+def main():
+    """Executa o fluxo completo do SalesInsight PY."""
+    print("=" * 60)
+    print(" SALESINSIGHT PY - Analise de Dados de Vendas")
+    print("=" * 60)
+
+    # Etapa 0 - garantir a existencia do dataset
+    if not os.path.exists("vendas.csv"):
+        gerar_dataset_vendas().to_csv("vendas.csv", index=False)
+
+    analisador = AnalisadorDeVendas()
+    analisador.carregar("vendas.csv")
+    inspecionar_dados(analisador.df_bruto)
+    analisador.transformar()
+    analisador.analisar()
+    analisador.visualizar()
+    analisador.resumo()
+
+    print("\n[CONCLUIDO] Fluxo finalizado com sucesso.")
 
 if __name__ == "__main__":
     main()
