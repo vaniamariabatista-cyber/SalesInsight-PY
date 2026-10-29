@@ -9,17 +9,15 @@ Quadro em Markdown com as colunas pedidas no enunciado: Backlog, A Fazer, Em And
 - [ ] B04 — Gráficos adicionais (histograma, boxplot ou mapa de calor)
 - [ ] Ajustar as faixas de Bronze, Prata e Ouro para uma distribuição mais equilibrada
 - [ ] Aceitar um CSV externo com as mesmas colunas
+- [ ] Gravar o vídeo de demonstração (não foi possível nesta entrega)
 
 ## A Fazer
 
-- [ ] Gravar o vídeo de demonstração (até 5 minutos)
-- [ ] Publicar o vídeo e colocar o link no README
-- [ ] Enviar os links do repositório e do vídeo no AVA
+- [ ] Enviar o link do repositório no AVA
 
 ## Em Andamento
 
-- [ ] Finalizar o README com decisões técnicas e links
-- [ ] Pull requests finais e merge da `develop` na `main`
+- (nenhuma tarefa em andamento)
 
 ## Concluído
 
@@ -38,3 +36,5 @@ Quadro em Markdown com as colunas pedidas no enunciado: Backlog, A Fazer, Em And
 - [x] Exportar resultados em CSV e JSON e reler o JSON
 - [x] Criar a classe `AnalisadorDeVendas` e a função `main()`
 - [x] Organizar branches por funcionalidade e commits descritivos
+- [x] Finalizar o README com decisões técnicas e links
+- [x] Pull requests finais e merge na `main`
