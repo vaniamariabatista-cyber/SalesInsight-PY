@@ -136,4 +136,4 @@ salesinsight-py/
 
 ## Vídeo de demonstração
 
-[inserir o link do Google Drive ou do YouTube aqui]
+Não foi possível gravar o vídeo de demonstração nesta entrega. Para ver o projeto funcionando, siga a seção "Como executar".
